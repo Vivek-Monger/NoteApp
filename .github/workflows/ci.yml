@@ -1,4 +1,4 @@
-name: CI - Django NoteApp
+name: CI
 
 # Trigger the workflow on push and pull requests
 on:
