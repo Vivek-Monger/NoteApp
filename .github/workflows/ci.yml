@@ -149,28 +149,24 @@ jobs:
           docker rm noteapp-test || true
           rm -rf test_data
       
-      # Step 5: Push to Docker Hub (only if secrets are configured)
+      # Step 5: Push to Docker Hub (only for main branch and if secrets are configured)
       - name: Login to Docker Hub
-        if: env.PUSH_TO_DOCKER_HUB == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_TOKEN != ''
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      - name: Push Docker image to Docker Hub
-        if: env.PUSH_TO_DOCKER_HUB == 'true'
+      - name: Build and push Docker image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_TOKEN != ''
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/noteapp:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/noteapp:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/noteapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-        env:
-          PUSH_TO_DOCKER_HUB: ${{ secrets.DOCKER_HUB_PASSWORD != '' }}
   
   # Job 3: Security and dependency checks
   security:
