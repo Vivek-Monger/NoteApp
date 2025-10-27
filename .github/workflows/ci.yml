@@ -82,12 +82,14 @@ jobs:
       
       # Step 3: Build Docker image
       - name: Build Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: false
           tags: noteapp:test
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
@@ -97,7 +99,17 @@ jobs:
           # Create data directory for test
           mkdir -p test_data
           
-          # Run container in background for 30 seconds to test startup
+          # Verify the image was built
+          if ! docker images | grep -q noteapp; then
+            echo "❌ Docker image 'noteapp:test' was not found"
+            echo "Available images:"
+            docker images
+            exit 1
+          fi
+          
+          echo "✅ Docker image found, starting container..."
+          
+          # Run container in background
           docker run -d \
             --name noteapp-test \
             -p 8001:8000 \
@@ -105,31 +117,36 @@ jobs:
             noteapp:test
           
           # Wait for container to start
-          sleep 10
+          sleep 15
           
           # Check if container is running
           if docker ps | grep -q noteapp-test; then
             echo "✅ Docker container started successfully"
+            
+            # Check container logs
+            echo "Container logs:"
+            docker logs noteapp-test
             
             # Test if the application is responding
             sleep 5
             response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001 || echo "000")
             echo "HTTP response code: $response"
             
-            if [ "$response" = "302" ] || [ "$response" = "200" ] || [ "$response" = "301" ]; then
-              echo "✅ Application is responding"
+            if [ "$response" = "302" ] || [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "404" ]; then
+              echo "✅ Application is responding (response: $response)"
             else
               echo "⚠️ Application may not be fully started (response: $response)"
             fi
           else
             echo "❌ Docker container failed to start"
-            docker logs noteapp-test
+            echo "Container logs:"
+            docker logs noteapp-test || true
             exit 1
           fi
           
           # Cleanup
-          docker stop noteapp-test
-          docker rm noteapp-test
+          docker stop noteapp-test || true
+          docker rm noteapp-test || true
           rm -rf test_data
       
       # Step 5: Push to Docker Hub (only if secrets are configured)
