@@ -151,14 +151,15 @@ jobs:
       
       # Step 5: Push to Docker Hub (only for main branch and if secrets are configured)
       - name: Login to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_TOKEN != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+        continue-on-error: true
       
       - name: Build and push Docker image to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_TOKEN != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -167,6 +168,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/noteapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+        continue-on-error: true
   
   # Job 3: Security and dependency checks
   security:
