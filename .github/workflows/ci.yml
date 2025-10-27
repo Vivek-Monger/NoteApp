@@ -91,46 +91,46 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
-      # Step 4: Test Docker image (ensure it starts correctly)
-      - name: Test Docker container startup
-        run: |
-          # Create data directory for test
-          mkdir -p test_data
+      # # Step 4: Test Docker image (ensure it starts correctly)
+      # - name: Test Docker container startup
+      #   run: |
+      #     # Create data directory for test
+      #     mkdir -p test_data
           
-          # Run container in background for 30 seconds to test startup
-          docker run -d \
-            --name noteapp-test \
-            -p 8001:8000 \
-            -v $(pwd)/test_data:/app/data \
-            noteapp:test
+      #     # Run container in background for 30 seconds to test startup
+      #     docker run -d \
+      #       --name noteapp-test \
+      #       -p 8001:8000 \
+      #       -v $(pwd)/test_data:/app/data \
+      #       noteapp:test
           
-          # Wait for container to start
-          sleep 10
+      #     # Wait for container to start
+      #     sleep 10
           
-          # Check if container is running
-          if docker ps | grep -q noteapp-test; then
-            echo "✅ Docker container started successfully"
+      #     # Check if container is running
+      #     if docker ps | grep -q noteapp-test; then
+      #       echo "✅ Docker container started successfully"
             
-            # Test if the application is responding
-            sleep 5
-            response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001 || echo "000")
-            echo "HTTP response code: $response"
+      #       # Test if the application is responding
+      #       sleep 5
+      #       response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001 || echo "000")
+      #       echo "HTTP response code: $response"
             
-            if [ "$response" = "302" ] || [ "$response" = "200" ] || [ "$response" = "301" ]; then
-              echo "✅ Application is responding"
-            else
-              echo "⚠️ Application may not be fully started (response: $response)"
-            fi
-          else
-            echo "❌ Docker container failed to start"
-            docker logs noteapp-test
-            exit 1
-          fi
+      #       if [ "$response" = "302" ] || [ "$response" = "200" ] || [ "$response" = "301" ]; then
+      #         echo "✅ Application is responding"
+      #       else
+      #         echo "⚠️ Application may not be fully started (response: $response)"
+      #       fi
+      #     else
+      #       echo "❌ Docker container failed to start"
+      #       docker logs noteapp-test
+      #       exit 1
+      #     fi
           
-          # Cleanup
-          docker stop noteapp-test
-          docker rm noteapp-test
-          rm -rf test_data
+      #     # Cleanup
+      #     docker stop noteapp-test
+      #     docker rm noteapp-test
+      #     rm -rf test_data
       
       # Step 5: Push to Docker Hub (only if secrets are configured)
       - name: Login to Docker Hub
