@@ -7,9 +7,6 @@ on:
   pull_request:
     branches: [ main, master ]
 
-# Allow manual workflow runs
-workflow_dispatch:
-
 jobs:
   # Job 1: Run Python tests and linting
   test:
