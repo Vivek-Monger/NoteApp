@@ -18,4 +18,3 @@ services:
       - DJANGO_ALLOWED_HOSTS=*
 
 # No named volumes needed - using bind mount for shared data directory
-
