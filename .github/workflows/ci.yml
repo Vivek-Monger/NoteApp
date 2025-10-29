@@ -52,12 +52,12 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
         continue-on-error: true  # Don't fail the build on linting issues
       
-      # Step 6: Run Django tests
-      - name: Run Django tests
+      # Step 6: Run pytest tests
+      - name: Run pytest tests
         env:
           DJANGO_SETTINGS_MODULE: note_project.settings
         run: |
-          python manage.py test --verbosity=2
+          pytest test.py --disable-warnings --maxfail=1 --tb=short
         continue-on-error: true  # Set to false if you want tests to be mandatory
       
       # Step 7: Check Django deployment checklist
