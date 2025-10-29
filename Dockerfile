@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy and install Python dependencies first (for better caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
+#
 # Create directories for static files and database
 RUN mkdir -p /app/staticfiles /app/data
 
