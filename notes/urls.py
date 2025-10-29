@@ -1,10 +1,7 @@
 from django.urls import path, include
 from django.contrib.auth.views import LogoutView
-<<<<<<< HEAD
 from rest_framework_simplejwt.views import TokenRefreshView
-=======
 from rest_framework_simplejwt.views import TokenRefreshView,TokenObtainPairView
->>>>>>> master
 from . import views
 from . import api_views
 from . import api_auth_views
@@ -23,10 +20,10 @@ urlpatterns = [
     path('api/register/', api_auth_views.api_register, name='api_register'),
     path('api/login/', api_auth_views.api_login, name='api_login'),
     path('api/logout/', api_auth_views.api_logout, name='api_logout'),
-<<<<<<< HEAD
-=======
+
+
     path('api/token/', TokenObtainPairView.as_view(), name='api_token_obtain_pair'),
->>>>>>> master
+
     path('api/token/refresh/', api_auth_views.api_refresh_token, name='api_token_refresh'),
     
     # DRF API URLs
