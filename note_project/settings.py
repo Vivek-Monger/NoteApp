@@ -14,7 +14,11 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-in-production'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = []
+=======
+ALLOWED_HOSTS = ['*']  # Allow all hosts (can be restricted in production)
+>>>>>>> master
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,10 +66,22 @@ TEMPLATES = [
 WSGI_APPLICATION = 'note_project.wsgi.application'
 
 # Database
+<<<<<<< HEAD
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+=======
+# Create the data directory if it doesn't exist
+import os
+data_dir = BASE_DIR / 'data'
+os.makedirs(data_dir, exist_ok=True)
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'data' / 'db.sqlite3',
+>>>>>>> master
     }
 }
 
@@ -93,6 +109,10 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
+<<<<<<< HEAD
+=======
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Directory for collected static files
+>>>>>>> master
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]

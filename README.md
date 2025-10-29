@@ -14,26 +14,98 @@ A simple, modern note-taking application built with Django and Bootstrap 5.
 
 ## Setup Instructions
 
+<<<<<<< HEAD
 ### 1. Install Dependencies
+=======
+### Option 1: Docker Setup (Recommended)
+
+The easiest way to run the NoteApp is using Docker. This method handles all dependencies and setup automatically.
+
+#### Quick Start (One Command)
+
+```bash
+./run_docker.sh run
+```
+
+Or using Docker Compose directly:
+
+```bash
+docker-compose up -d
+```
+
+The application will be available at `http://localhost:8000/`
+
+#### Available Commands
+
+- **Build the image**: `./run_docker.sh build`
+- **Build and run**: `./run_docker.sh run`
+- **Stop the container**: `./run_docker.sh stop`
+- **View logs**: `docker-compose logs -f`
+- **Access container shell**: `docker exec -it noteapp bash`
+
+#### Pushing to Docker Hub
+
+1. Edit `run_docker.sh` and replace `your-dockerhub-username` with your actual Docker Hub username
+2. Run: `./run_docker.sh push`
+3. The script will build, tag, and push the image to Docker Hub
+
+#### Manual Docker Commands
+
+```bash
+# Build the image
+docker-compose build
+
+# Start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the container
+docker-compose down
+
+# Tag and push to Docker Hub
+docker build -t your-username/noteapp:latest .
+docker push your-username/noteapp:latest
+```
+
+### Option 2: Local Python Setup
+
+If you prefer to run the app locally without Docker:
+
+#### 1. Install Dependencies
+>>>>>>> master
 
 ```bash
 pip install -r requirements.txt
 ```
 
+<<<<<<< HEAD
 ### 2. Run Migrations
+=======
+#### 2. Run Migrations
+>>>>>>> master
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
+<<<<<<< HEAD
 ### 3. Create Superuser (Optional)
+=======
+#### 3. Create Superuser (Optional)
+>>>>>>> master
 
 ```bash
 python manage.py createsuperuser
 ```
 
+<<<<<<< HEAD
 ### 4. Run Development Server
+=======
+#### 4. Run Development Server
+>>>>>>> master
 
 ```bash
 python manage.py runserver
@@ -66,6 +138,15 @@ NoteApp/
 │   ├── note_list.html
 │   ├── note_form.html
 │   └── note_confirm_delete.html
+<<<<<<< HEAD
+=======
+├── static/                # Static files (CSS, JS)
+├── Dockerfile             # Docker configuration
+├── docker-compose.yml     # Docker Compose configuration
+├── .dockerignore          # Files to exclude from Docker build
+├── run_docker.sh          # Helper script for Docker operations
+├── data/                  # Database directory (created automatically)
+>>>>>>> master
 ├── manage.py
 ├── requirements.txt
 └── README.md

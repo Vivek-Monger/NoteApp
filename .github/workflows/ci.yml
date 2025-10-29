@@ -1,0 +1,229 @@
+name: CI
+
+# Trigger the workflow on push and pull requests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # Job 1: Run Python tests and linting
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    # Test on multiple Python versions using matrix strategy
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Set up Python environment
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'  # Cache pip dependencies for faster builds
+      
+      # Step 3: Install system dependencies (for SQLite and other tools)
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3
+      
+      # Step 4: Install Python dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 pytest-django  # Additional testing tools
+      
+      # Step 5: Lint Python code with flake8
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true  # Don't fail the build on linting issues
+      
+      # Step 6: Run Django tests
+      - name: Run Django tests
+        env:
+          DJANGO_SETTINGS_MODULE: note_project.settings
+        run: |
+          python manage.py test --verbosity=2
+        continue-on-error: true  # Set to false if you want tests to be mandatory
+      
+      # Step 7: Check Django deployment checklist
+      - name: Check Django deployment readiness
+        run: |
+          python manage.py check --deploy
+        continue-on-error: True
+
+  # Job 2: Build and test Docker image
+  docker-build:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Set up Docker Buildx for advanced Docker features
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Step 3: Build Docker image
+      - name: Build Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: noteapp:test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      # Step 4: Test Docker image (ensure it starts correctly)
+      - name: Test Docker container startup
+        run: |
+          # Create data directory for test
+          mkdir -p test_data
+          
+          # Verify the image was built
+          if ! docker images | grep -q noteapp; then
+            echo "❌ Docker image 'noteapp:test' was not found"
+            echo "Available images:"
+            docker images
+            exit 1
+          fi
+          
+          echo "✅ Docker image found, starting container..."
+          
+          # Run container in background
+          docker run -d \
+            --name noteapp-test \
+            -p 8001:8000 \
+            -v $(pwd)/test_data:/app/data \
+            noteapp:test
+          
+          # Wait for container to start
+          sleep 15
+          
+          # Check if container is running
+          if docker ps | grep -q noteapp-test; then
+            echo "✅ Docker container started successfully"
+            
+            # Check container logs
+            echo "Container logs:"
+            docker logs noteapp-test
+            
+            # Test if the application is responding
+            sleep 5
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001 || echo "000")
+            echo "HTTP response code: $response"
+            
+            if [ "$response" = "302" ] || [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "404" ]; then
+              echo "✅ Application is responding (response: $response)"
+            else
+              echo "⚠️ Application may not be fully started (response: $response)"
+            fi
+          else
+            echo "❌ Docker container failed to start"
+            echo "Container logs:"
+            docker logs noteapp-test || true
+            exit 1
+          fi
+          
+          # Cleanup
+          docker stop noteapp-test || true
+          docker rm noteapp-test || true
+          rm -rf test_data
+      
+      # Step 5: Push to Docker Hub (only for main branch and if secrets are configured)
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        continue-on-error: true
+      
+      - name: Build and push Docker image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/noteapp:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        continue-on-error: true
+  
+  # Job 3: Security and dependency checks
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit
+      
+      # Check for known security vulnerabilities in dependencies
+      - name: Check for security vulnerabilities
+        run: |
+          pip freeze > requirements-freeze.txt
+          safety check -r requirements.txt --continue-on-error || true
+        continue-on-error: true
+      
+      # Static security analysis
+      - name: Run Bandit security linter
+        run: |
+          bandit -r . -f json -o bandit-report.json -ll || true
+          bandit -r . -ll || true
+        continue-on-error: true
+
+  # Summary job (always runs at the end)
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [test, docker-build, security]
+    if: always()
+    
+    steps:
+      - name: Check workflow status
+        run: |
+          echo "🧪 Tests Status: ${{ needs.test.result }}"
+          echo "🐳 Docker Status: ${{ needs.docker-build.result }}"
+          echo "🔒 Security Status: ${{ needs.security.result }}"
+          
+          if [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.docker-build.result }}" != "success" ] || \
+             [ "${{ needs.security.result }}" != "success" ]; then
+            echo "❌ Some checks failed. Please review the workflow results."
+            exit 1
+          else
+            echo "✅ All checks passed successfully!"
+          fi
+

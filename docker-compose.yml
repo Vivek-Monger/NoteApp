@@ -1,0 +1,20 @@
+services:
+  # NoteApp Django service
+  noteapp:
+    build:
+      context: .                    # Build context is the current directory
+      dockerfile: Dockerfile        # Use the Dockerfile in the root directory
+    container_name: noteapp        # Name the container 'noteapp'
+    ports:
+      - "8000:8000"                # Map host port 8000 to container port 8000
+    volumes:
+      # Mount entire project for live code sync (excludes venv, __pycache__, etc.)
+      - .:/app
+      # Bind mount the local data directory so Docker and local Python share the same database
+      - ./data:/app/data
+    restart: unless-stopped       # Automatically restart container on failure
+    environment:
+      # Allow Django to accept connections from any host
+      - DJANGO_ALLOWED_HOSTS=*
+
+# No named volumes needed - using bind mount for shared data directory
